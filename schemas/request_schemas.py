@@ -36,6 +36,8 @@ class MedicineItemResponse(EmptyStringToNoneModel):
     quantity: int
     frequency: Optional[str]
 
+class UserResponseForBackPopulates(EmptyStringToNoneModel):
+    name: Optional[str]
 
 class MedicineRequestResponse(EmptyStringToNoneModel):
     id: int
@@ -47,6 +49,9 @@ class MedicineRequestResponse(EmptyStringToNoneModel):
     out_of_stock_items: Optional[List[str]] = None
     created_at: datetime
     items: List[MedicineItemResponse]
+    created_by: Optional[UserResponseForBackPopulates]
+    cancelled_by: Optional[UserResponseForBackPopulates]
+    status_updated_by: Optional[UserResponseForBackPopulates]
 
 
     class Config:

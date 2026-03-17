@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session, func, select
 
 from database import get_session
+from models.user_models import User
 from schemas.pharmacy_schemas import (
     MedicineRequestResponseStatusChange,
 )
@@ -13,9 +14,16 @@ from models.request_models import MedicineRequest, MedicineRequestItem
 from models.pharmacy_models import medicine_model
 from sqlalchemy.orm import selectinload
 
+from security.oauth2 import get_current_user
+from security.permissions import require_roles
+
 
 router = APIRouter(
     tags=["Pharmacy Dashboard"],
+    dependencies=[
+        Depends(get_current_user),
+        Depends(require_roles(["admin", "pharmacy"]))
+    ]
 )
 
 
@@ -64,7 +72,8 @@ def get_all_requests(
 def update_request_status(
     request_id: int,
     data: MedicineRequestResponseStatusChange,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     try:
 
@@ -82,6 +91,12 @@ def update_request_status(
             raise HTTPException(
                 status_code=400,
                 detail="Invalid status"
+            )
+
+        if request.status == "cancelled":
+            raise HTTPException(
+                status_code=400,
+                detail="Cancelled requests cannot be processed"
             )
 
         if request.status != "pending":
@@ -105,6 +120,7 @@ def update_request_status(
             request.out_of_stock_items = None
 
         request.status = data.status
+        request.status_updated_by_user_id= current_user.id
 
         session.add(request)
         session.commit()

@@ -5,8 +5,11 @@ import pytz
 
 from typing import TYPE_CHECKING
 
+
+
 if TYPE_CHECKING:
     from models.pharmacy_models import medicine_model
+    from models.user_models import User
 
 
 def india_datetime():
@@ -27,8 +30,8 @@ class MedicineRequest(SQLModel, table=True):
 
     notes: Optional[str] = None
 
-    # Status handled by pharmacy later
     status: str = Field(default="pending")
+
     out_of_stock_items: Optional[List[str]] = Field(
         default=None,
         sa_column=Column(JSON)
@@ -36,8 +39,25 @@ class MedicineRequest(SQLModel, table=True):
 
     created_at: datetime = Field(default_factory=india_datetime)
 
-    # Temporary fixed user id
-    created_by_user_id: int = Field(default=1)
+    created_by_user_id: int = Field(foreign_key="user.id")
+    cancelled_by_user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    status_updated_by_user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+
+    # 🔥 Relationships
+    created_by: Optional["User"] = Relationship(
+        back_populates="created_requests",
+        sa_relationship_kwargs={"foreign_keys": "[MedicineRequest.created_by_user_id]"}
+    )
+
+    cancelled_by: Optional["User"] = Relationship(
+        back_populates="cancelled_requests",
+        sa_relationship_kwargs={"foreign_keys": "[MedicineRequest.cancelled_by_user_id]"}
+    )
+
+    status_updated_by: Optional["User"] = Relationship(
+        back_populates="updated_requests",
+        sa_relationship_kwargs={"foreign_keys": "[MedicineRequest.status_updated_by_user_id]"}
+    )
 
     items: List["MedicineRequestItem"] = Relationship(back_populates="request")
 

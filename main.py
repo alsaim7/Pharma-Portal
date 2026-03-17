@@ -7,6 +7,7 @@ from models import *
 from fastapi.middleware.cors import CORSMiddleware
 from routers.request_router import router as request_router
 from routers.pharmacy_router import router as pharmacy_router
+from routers.auth import router as auth_router
 
 
 
@@ -36,6 +37,7 @@ def root():
 
 app.include_router(request_router)
 app.include_router(pharmacy_router)
+app.include_router(auth_router)
 
 
 app.add_middleware(

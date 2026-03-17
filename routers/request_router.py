@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, func, select
 
 from database import get_session
+from models.user_models import User
 from schemas.request_schemas import (
     MedicineRequestCreate,
     MedicineRequestResponse,
@@ -14,9 +15,16 @@ from models.pharmacy_models import medicine_model
 from sqlalchemy.orm import selectinload
 from fastapi import Query
 
+from security.oauth2 import get_current_user
+from security.permissions import require_roles
+
 
 router = APIRouter(
     tags=["Requested By"],
+    dependencies=[
+        Depends(get_current_user),
+        Depends(require_roles(["admin", "nurse"]))
+    ]
 )
 
 
@@ -24,11 +32,12 @@ router = APIRouter(
 @router.post("/requests", response_model=MedicineRequestResponse)
 def create_request(
     data: MedicineRequestCreate,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     try:
         request_data = data.model_dump(exclude={"medicines"})
-        request_data["created_by_user_id"] = 1
+        request_data["created_by_user_id"] = current_user.id
 
         request = MedicineRequest(**request_data)
 
@@ -152,7 +161,8 @@ def get_request_by_id(
 @router.patch("/requests/{request_id}/cancel", response_model=MedicineRequestResponseCancel)
 def cancel_request(
     request_id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     try:
 
@@ -171,6 +181,7 @@ def cancel_request(
             )
 
         request.status = "cancelled"
+        request.cancelled_by_user_id= current_user.id
 
         session.add(request)
         session.commit()
