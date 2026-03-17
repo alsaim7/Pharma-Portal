@@ -16,6 +16,8 @@ class EmptyStringToNoneModel(SQLModel):
             return None
         return v
 
+
+
 class MedicineRequestResponseStatusChange(EmptyStringToNoneModel):
     status: str
     out_of_stock_items: Optional[List[str]] = None
