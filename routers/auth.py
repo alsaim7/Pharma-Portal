@@ -33,7 +33,7 @@ def login(req: LoginSchema, db: Session = Depends(get_session)):
 
     expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     token = create_access_token(
-        data={"sub": user.username, "user_id": user.id, "name": user.name},
+        data={"sub": user.username, "user_id": user.id, "role": user.role, "name": user.name},
         expires_delta=expires
     )
 
